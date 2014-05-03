@@ -1,7 +1,7 @@
 NLP 14 @ ETHZ
 =============
 
-All the files expect a folder called 'data' with the test data and a folder called 'rouge' with the rouge stuff in it.
+All the files expect a folder called 'data' with the test data (1st subfolder should be duc2004) and a folder called 'rouge' with the rouge stuff in it (rouge pl script should be directly in there, as well as rouge's data folder).
 These are currently in the .gitignore, since they are very large.
 
 Usage
