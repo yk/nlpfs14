@@ -20,11 +20,7 @@ class Document(object):
         self.modelFileNames, self.models = zip(*[(mfn,mod) for mfn,mod in zip(self.modelFileNames,self.models) if mod])
         self.peerFileNames,self.peers = zip(*[(pfn,peer) for pfn,peer in zip(self.peerFileNames,self.peers) if peer])
 
-def cleanDocText(text):
-    #TODO: make this better
-    text = re.sub("`|'|\"","",text)
-    text = re.sub("(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\.","\\1",text)
-    return text
+        self.ext = dict() #this is intended as a dict where you can store stuff about this document during the computation, for example its text split into sentences
 
 def parseDocFile(fileName):
     root = ET.parse(fileName).getroot()
@@ -32,7 +28,6 @@ def parseDocFile(fileName):
     if len(texts) != 1:
         raise Exception('File does not have a single text node')
     text = texts[0].text.replace('\n','')
-    text = cleanDocText(text)
     return text
 
 def parseSimpleFile(fileName):
@@ -92,7 +87,7 @@ def savePredictions(documents,predictions,predictionsPath):
     for doc,pred in zip(documents,predictions):
         pfn = '%s/PRED.A.%s' % (predictionsPath,doc.name)
         with open(pfn,'w') as f:
-            f.write(pred)
+            f.write(' %s ' % pred)
         predictionFileNames.append(pfn)
     return predictionFileNames
 
@@ -121,7 +116,6 @@ def evaluateRouge(documents,predictions,rougeBinary='rouge/ROUGE-1.5.5.pl',rouge
             if data[0] not in results:
                 results[data[0]] = dict()
             results[data[0]][data[1]] = (float(data[2]),(float(data[3]),float(data[4])))
-    return results
 
     if True: #for debugging set to false, else true
         os.remove(tmpXmlFileName)
@@ -130,3 +124,4 @@ def evaluateRouge(documents,predictions,rougeBinary='rouge/ROUGE-1.5.5.pl',rouge
             os.remove(fn)
         os.rmdir(tmpPredFolderName)
     
+    return results
