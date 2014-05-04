@@ -3,6 +3,9 @@
 All the files expect a folder called 'data' with the test data (1st subfolder should be duc2004) and a folder called 'rouge' with the rouge stuff in it (rouge pl script should be directly in there, as well as rouge's data folder).
 These are currently in the .gitignore, since they are very large.
 
+## Requirements
+sklearn pexpect unidecode xmltodict (can all be installed via pip)
+
 ## Usage
 ### I/O
 The ``parsetest.py`` file shows the usage of the nlpio module.
@@ -15,3 +18,6 @@ Fixes and improvements to the general setup should be cherry-picked or merged in
 
 ## Things to do:
 * better file cleaning, maybe with some specialized tools
+
+## Acknowledgements
+The ``corenlp`` package has been authored by Hiroyoshi Komatsu and Johannes Castner (https://bitbucket.org/torotoki/corenlp-python)
