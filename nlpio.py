@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import re,glob,random,os
+from corenlp import StanfordCoreNLP
 
 class Document(object):
     def __init__(self,name,path,modelPath,peerPath):
@@ -125,3 +126,11 @@ def evaluateRouge(documents,predictions,rougeBinary='rouge/ROUGE-1.5.5.pl',rouge
         os.rmdir(tmpPredFolderName)
     
     return results
+
+stanford = None
+
+def stanfordParse(text, corenlpDir='stanford-corenlp-full-2013-11-12/'):
+    global stanford
+    if stanford is None:
+        stanford = StanfordCoreNLP(corenlpDir)
+    return stanford.raw_parse(text)
