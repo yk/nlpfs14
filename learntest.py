@@ -1,5 +1,6 @@
 from nlpio import *
 from nlplearn import *
+from nlpprocess import *
 
 from sklearn.grid_search import GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -25,10 +26,12 @@ if __name__ == '__main__':
 
     trainDocs,testDocs = train_test_split(documents,test_size=0.2)
 
-    grid_search.fit(documents)
+    grid_search.fit(trainDocs)
 
     print("Best score: %0.3f" % grid_search.best_score_)
     best_parameters = grid_search.best_estimator_.get_params()
     for param_name in sorted(parameters.keys()):
         print("\t%s: %r" % (param_name, best_parameters[param_name]))
+
+    print("score on test set: %f" % scorer(grid_search,testDocs))
     
