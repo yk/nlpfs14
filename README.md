@@ -1,7 +1,7 @@
 # NLP 14 @ ETHZ
 
 All the files expect a folder called 'data' with the test data (1st subfolder should be duc2004) and a folder called 'rouge' with the rouge stuff in it (rouge pl script should be directly in there, as well as rouge's data folder).
-It also requires a folder called ``stanford-corenlp-full-2013-11-12`` in the root directory, which you can get from here: http://nlp.stanford.edu/software/stanford-corenlp-full-2013-11-12.zip
+It also requires a folder called ``stanford-corenlp-full-2013-11-12`` in the **~~root~~ corenlp** directory, which you can get from here: http://nlp.stanford.edu/software/stanford-corenlp-full-2013-11-12.zip
 These are currently in the .gitignore, since they are very large.
 
 ## Requirements
