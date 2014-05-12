@@ -1,6 +1,7 @@
-from nlplearn import *
-from operator import itemgetter
-import nltk
+import re
+from nlpio import *
+from sklearn.base import BaseEstimator
+from sklearn.base import TransformerMixin
 
 class SimpleTextCleaner(BaseEstimator,TransformerMixin):
     #TODO: make better
@@ -28,5 +29,21 @@ class SentenceSplitter(BaseEstimator,TransformerMixin):
         for doc in documents:
             if not 'sentences' in doc.ext:
                 doc.ext['sentences'] = [s.strip() for s in doc.text.split('.') if s]
+        return documents
+
+class StanfordParser(BaseEstimator, TransformerMixin):
+
+    def __init__(self):
+        pass
+
+    def fit(self, documents, y=None):
+        return self
+
+    def transform(self, documents):
+        for i, doc in enumerate(documents):
+            if not 'stanford' in doc.ext:
+                article = stanfordParse(doc.text)
+                models = [stanfordParse(model) for model in doc.models]
+                doc.ext['stanford'] = dict(article=article,models=models)
         return documents
 
