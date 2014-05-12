@@ -4,3 +4,4 @@ rouge
 tmp*
 **/*.swp
 corenlp/stanford-corenlp-full-2013-11-12
+corenlp/nlp.properties

@@ -1,18 +1,22 @@
 from nlpio import *
 from nlplearn import *
 from nlpprocess import *
+from nlpcrf import *
 
 from sklearn.grid_search import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.cross_validation import train_test_split
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+
     documents = loadDocumentsFromFile('testset.txt')
 
     pipeline = Pipeline([
         ('clean',SimpleTextCleaner()),
         ('sentence',SentenceSplitter()),
         ('stanford',StanfordParser()),
+        ('crffeatures',CrfFeatureExtractor()),
         ('head',HeadlineEstimator()),
         ])
     

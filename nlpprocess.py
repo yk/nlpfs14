@@ -33,17 +33,18 @@ class SentenceSplitter(BaseEstimator,TransformerMixin):
 
 class StanfordParser(BaseEstimator, TransformerMixin):
 
-    def __init__(self):
-        pass
+    def __init__(self,annotators=['tokenize', 'ssplit', 'pos', 'lemma', 'ner']):
+        self.annotators = annotators
 
     def fit(self, documents, y=None):
         return self
 
     def transform(self, documents):
+        logging.info('analyzing documents with corenlp')
         for i, doc in enumerate(documents):
             if not 'stanford' in doc.ext:
-                article = stanfordParse(doc.text)
-                models = [stanfordParse(model) for model in doc.models]
+                article = stanfordParse(doc.text,annotators=self.annotators)
+                models = [stanfordParse(model,annotators=self.annotators) for model in doc.models]
                 doc.ext['stanford'] = dict(article=article,models=models)
         return documents
 

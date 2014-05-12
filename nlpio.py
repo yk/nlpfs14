@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-import re,glob,random,os
+import re,glob,random,os,logging,threading
 from corenlp import StanfordCoreNLP
 
 class Document(object):
@@ -128,9 +128,20 @@ def evaluateRouge(documents,predictions,rougeBinary='rouge/ROUGE-1.5.5.pl',rouge
     return results
 
 stanford = None
+stanfordLock = threading.Lock()
+stanfordDefaultAnnotators =['tokenize', 'ssplit', 'pos', 'lemma', 'ner', 'parse','dcoref']
 
-def stanfordParse(text, corenlpDir='corenlp/stanford-corenlp-full-2013-11-12/'):
+def stanfordParse(text, corenlpDir='corenlp/stanford-corenlp-full-2013-11-12/',annotators =stanfordDefaultAnnotators):
     global stanford
     if stanford is None:
-        stanford = StanfordCoreNLP(corenlpDir)
+        stanfordLock.acquire()
+        try:
+            if stanford is None:
+                logging.info('loading stanford corenlp')
+                with open('corenlp/nlp.properties','w') as f:
+                    f.write("annotators = " + ", ".join(annotators))
+                stanford = StanfordCoreNLP(corenlpDir,properties='nlp.properties')
+                logging.info('done loading stanford corenlp')
+        finally:
+            stanfordLock.release()
     return stanford.raw_parse(text)
