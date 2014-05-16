@@ -12,24 +12,26 @@ if __name__ == '__main__':
 
     documents = loadDocumentsFromFile('testset.txt')
 
+
     pipeline = Pipeline([
         ('clean',SimpleTextCleaner()),
         ('sentence',SentenceSplitter()),
         ('stanford',StanfordParser()),
         ('crffeatures',CrfFeatureExtractor()),
-        ('head',HeadlineEstimator()),
+        ('crf',CrfEstimator(C=1.0)),
         ])
     
+    trainDocs,testDocs = train_test_split(documents,test_size=0.2)
+    scorer = RougeScorer()
     #parameters for cross-validation grid search go here
+    """
     parameters = {
             
             }
 
-    scorer = RougeScorer()
 
     grid_search = GridSearchCV(pipeline, parameters, scoring=scorer, cv=(5 if parameters else 2), n_jobs=1, refit=True, verbose=3)
 
-    trainDocs,testDocs = train_test_split(documents,test_size=0.2)
 
     grid_search.fit(trainDocs)
 
@@ -39,4 +41,9 @@ if __name__ == '__main__':
         print("\t%s: %r" % (param_name, best_parameters[param_name]))
 
     print("score on test set: %f" % scorer(grid_search,testDocs))
+    """
+
+    pipeline.fit(trainDocs)
+    print pipeline.predict(testDocs)
+    #print("score on test set: %f" % scorer(pipeline,testDocs))
     
