@@ -24,12 +24,10 @@ class Document(object):
         self.ext = dict() #this is intended as a dict where you can store stuff about this document during the computation, for example its text split into sentences
 
 def parseDocFile(fileName):
-    root = ET.parse(fileName).getroot()
-    texts = root.findall('TEXT')
-    if len(texts) != 1:
-        raise Exception('File does not have a single text node')
-    text = texts[0].text.replace('\n','')
-    return text
+    content = parseSimpleFile(fileName).replace('&AMP;', ' and ')
+
+    text = ET.fromstring(content).find('TEXT').text
+    return text.replace('\n', ' ').replace('  ', ' ').strip()
 
 def parseSimpleFile(fileName):
     with open(fileName) as f:
