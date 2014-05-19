@@ -4,6 +4,7 @@ import numpy as np
 from nlpio import *
 from nlplearn import *
 from nlpprocess import *
+from nlpfeature import *
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from pystruct.models import GraphCRF
