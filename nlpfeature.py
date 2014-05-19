@@ -1,6 +1,7 @@
+import itertools as itt
+
 class Feature(object):
-    def __init__(self,name):
-        self.name = name
+    def __init__(self):
         self.tags = dict()
         self.offset = 0
 
@@ -11,16 +12,17 @@ class Feature(object):
     def setOffset(self,offset):
         self.offset = offset
 
-    def setFeature(self,tag,features):
+    def setFeature(self,features,tag,value=1):
         if tag in self.tags:
-            features[self.offset + self.tags[tag]] = 1
+            features[self.offset + self.tags[tag]] = value
             
-    def setFeatures(self,tags,features):
-        for tag in tags:
-            self.setFeature(tag,features)
+class SimpleFeature(Feature):
+    def __init__(self):
+        super(SimpleFeature,self).__init__()
+        self._onlytag = "onlytag"
 
-    def extract(self,datum):
-        pass
+    def setFeature(self,features,value):
+        super(SimpleFeature,self).setFeature(features,self._onlytag,value=value)
 
 def setOffsets(features):
     offset = 0 
@@ -28,3 +30,18 @@ def setOffsets(features):
         feature.setOffset(offset)
         offset += len(feature.tags)
     return offset
+
+class WordTagFeature(Feature):
+    def __init__(self,tagName):
+        super(WordTagFeature,self).__init__()
+        self._tagName = tagName
+
+    def fit(self,word):
+        self.addTag(self.extract(word))
+
+    def extract(self,word):
+        return word[1][self._tagName]
+
+    def extractAndSet(self,features,word):
+        self.setFeature(features,self.extract(word))
+        

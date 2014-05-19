@@ -23,14 +23,13 @@ class CrfFeatureExtractor(BaseEstimator,TransformerMixin):
 
     def fit(self,documents,y=None):
         logging.info('extracting crf features')
-        self.posTags = []
-        self.nerTags = []
+        self.wordFeatures = [WordTagFeature('PartOfSpeech'),WordTagFeature('NamedEntityTag')]
         for doc in documents:
             for text in itt.chain([doc.ext['stanford']['article']],doc.ext['stanford']['models']):
                 for sent in text['sentences']:
                     for word in sent['words']:
-                        self.posTags.append(word[1]['PartOfSpeech'])
-                        self.nerTags.append(word[1]['NamedEntityTag'])
+                        for feature in self.wordFeatures:
+                            feature.fit(word)
         self.posTags,self.nerTags = itt.imap(lambda x: dict(zip(list(set(x)),itt.count())),[self.posTags,self.nerTags])
         logging.info('extracted %d POS tags' % len(self.posTags.items()))
         logging.info('extracted %d NER tags' % len(self.nerTags.items()))
@@ -49,16 +48,13 @@ class CrfFeatureExtractor(BaseEstimator,TransformerMixin):
                         for word in sent['words']:
                             labelWords.append(word[0])
                 labelWords = set(labelWords)
+                numFeatures = setOffsets(self.wordFeatures)
                 for sent in doc.ext['stanford']['article']['sentences']:
                     for word in sent['words']:
                         labels.append(1 if word[0] in labelWords else 0)
-                        features = np.zeros(len(self.posTags) + len(self.nerTags))
-                        posTag = word[1]['PartOfSpeech']
-                        nerTag = word[1]['NamedEntityTag']
-                        if posTag in self.posTags:
-                            features[self.posTags[posTag]] = 1
-                        if nerTag in self.nerTags:
-                            features[self.nerTags[nerTag]] = 1
+                        features = np.zeros(numFeatures)
+                        for feature in self.wordFeatures:
+                            feature.extractAndSet(features,word)
                         nodes.append(features)
                 for i in range(len(nodes)-1):
                     edges.append([i,i+1])
