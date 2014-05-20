@@ -56,15 +56,15 @@ class TreeNode(object):
         self.children = children
         self.index = index
 
-    def findNode(self,word):
-        if self.children[0] == word:
-            return self
-        if self.isLeaf():
-            return None
-        for child in self.children:
-            wn = child.findNode(word)
-            if wn is not None:
-                return wn
+    def findNode(self,word,fromIndex=0):
+        if self.isLeaf() and self.index >= fromIndex:
+            if self.children[0] == word:
+                return self
+        else:
+            for child in self.children:
+                wn = child.findNode(word)
+                if wn is not None:
+                    return wn
         return None
 
     def isLeaf(self):
@@ -100,9 +100,34 @@ class StanfordTransformer(BaseEstimator,TransformerMixin):
                 for sent in text['sentences']:
                     if type(sent['parsetree']) == type('bla'):
                         sent['parsetree'],sent['parsetreeindex'] = parseTreeString(sent['parsetree'])
+                    indx = 0
                     for i,word in enumerate(sent['words']):
-                        wn = sent['parsetree'].findNode(word[0])
+                        wn = sent['parsetree'].findNode(word[0],fromIndex=indx)
                         if wn is not None:
                             word[1]['parsetreenode'] = wn
+                            indx = wn.index + 1
+                        dependency = None
+                        for dep in sent['indexdependencies']:
+                            if int(dep[2].rsplit('-',1)) == i+1:
+                                dependency = (int(dep[1].rsplit('-',1)-1),dep[0],[])
+                                break
+                        if dependency is not None:
+                            word[1]['dependency'] = dependency
+                    for i,word in enumerate(sent['words']):
+                        if word[1]['dependency'][0] >= 0:
+                            sent['words'][word[1]['dependency'][0]][1]['dependency'][2].append(i)
+                    for word in sent['words']:
+                        word[1]['corefout'] = []
+                        word[1]['corefin'] = []
+                for coref_outer in text['coref']:
+                    for coref in coref_outer:
+                        ssi = coref[0][1]
+                        tsi = coref[1][1]
+                        srcsent = text['sentences'][ssi]
+                        trgsent = text['sentences'][tsi]
+                        for swi in range(coref[0][3],coref[0][4]):
+                            for twi in range(coref[1][3],coref[1][4]):
+                                srcsent['words'][swi][1]['corefout'].append((tsi,twi))
+                                trgsent['words'][swi][1]['corefin'].append((ssi,swi))
         return documents
 

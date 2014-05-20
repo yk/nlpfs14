@@ -22,7 +22,7 @@ class ManualFeatureExtractor(BaseEstimator,TransformerMixin):
         pass
 
     def fit(self,documents,y=None):
-        logging.info('extracting crf features')
+        logging.info('extracting features')
         self.wordFeatures = [WordTagFeature('PartOfSpeech'),WordTagFeature('NamedEntityTag')]
         for doc in documents:
             for text in itt.chain([doc.ext['stanford']['article']],doc.ext['stanford']['models']):
@@ -33,7 +33,7 @@ class ManualFeatureExtractor(BaseEstimator,TransformerMixin):
         return self
 
     def transform(self,documents):
-        logging.info('applying crf features')
+        logging.info('applying features')
         for doc in documents:
             if not 'crf' in doc.ext:
                 nodes = []
