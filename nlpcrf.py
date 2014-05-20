@@ -30,9 +30,6 @@ class CrfFeatureExtractor(BaseEstimator,TransformerMixin):
                     for word in sent['words']:
                         for feature in self.wordFeatures:
                             feature.fit(word)
-        self.posTags,self.nerTags = itt.imap(lambda x: dict(zip(list(set(x)),itt.count())),[self.posTags,self.nerTags])
-        logging.info('extracted %d POS tags' % len(self.posTags.items()))
-        logging.info('extracted %d NER tags' % len(self.nerTags.items()))
         return self
 
     def transform(self,documents):

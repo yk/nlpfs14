@@ -24,6 +24,7 @@ if __name__ == '__main__':
     parsd = nlpio.stanfordParse(sentence)
     for sent in parsd['sentences']:
         print sent['parsetree']
+        print nestedExpr().parseString(sent['parsetree']).asList()[0]
         print processNode(nestedExpr().parseString(sent['parsetree']).asList()[0])
         print renderNode(processNode(nestedExpr().parseString(sent['parsetree']).asList()[0]))
         print Tree(renderNode(processNode(nestedExpr().parseString(sent['parsetree']).asList()[0])) + ";",format=1).get_ascii()
