@@ -65,11 +65,10 @@ def produceRougeInput(documents,predictionFileNames):
         lines.append('<INPUT-FORMAT TYPE="SPL">')
         lines.append('</INPUT-FORMAT>')
         lines.append('<PEERS>')
-        #for peer in document.peerFileNames:
-        for peer in predictionFileNames:
-            lines.append('<P ID="%s">'%getId(peer))
-            lines.append(peer)
-            lines.append('</P>')
+        peer = predictionFileNames[i]
+        lines.append('<P ID="%s">'%getId(peer))
+        lines.append(peer)
+        lines.append('</P>')
         lines.append('</PEERS>')
         lines.append('<MODELS>')
         for model in document.modelFileNames:
