@@ -50,6 +50,19 @@ class StanfordParser(BaseEstimator, TransformerMixin):
                 doc.ext['stanford'] = dict(article=article,models=models)
         return documents
 
+class StanfordBatchParser(StanfordParser):
+
+    def __init__(self,**kwargs):
+        super(StanfordBatchParser,self).__init__(**kwargs)
+
+    def transform(self, documents):
+        logging.info('analyzing documents with corenlp')
+        if not 'stanford' in documents[0].ext:
+            parsed = stanfordBatchParse(documents)
+            for doc,prs in zip(documents,parsed):
+                doc.ext['stanford'] = dict(article=prs[0],models=prs[1])
+        return documents
+
 class TreeNode(object):
     def __init__(self,name,children,index):
         self.name = name
@@ -107,27 +120,28 @@ class StanfordTransformer(BaseEstimator,TransformerMixin):
                             word[1]['parsetreenode'] = wn
                             indx = wn.index + 1
                         dependency = None
-                        for dep in sent['indexdependencies']:
-                            if int(dep[2].rsplit('-',1)) == i+1:
-                                dependency = (int(dep[1].rsplit('-',1)-1),dep[0],[])
+                        for dep in sent['indexeddependencies']:
+                            if int(dep[2].rsplit('-',1)[-1]) == i+1:
+                                dependency = (int(dep[1].rsplit('-',1)[-1])-1,dep[0],[])
                                 break
                         if dependency is not None:
                             word[1]['dependency'] = dependency
                     for i,word in enumerate(sent['words']):
-                        if word[1]['dependency'][0] >= 0:
+                        if 'dependency' in word[1] and word[1]['dependency'][0] >= 0:
                             sent['words'][word[1]['dependency'][0]][1]['dependency'][2].append(i)
                     for word in sent['words']:
                         word[1]['corefout'] = []
                         word[1]['corefin'] = []
-                for coref_outer in text['coref']:
-                    for coref in coref_outer:
-                        ssi = coref[0][1]
-                        tsi = coref[1][1]
-                        srcsent = text['sentences'][ssi]
-                        trgsent = text['sentences'][tsi]
-                        for swi in range(coref[0][3],coref[0][4]):
-                            for twi in range(coref[1][3],coref[1][4]):
-                                srcsent['words'][swi][1]['corefout'].append((tsi,twi))
-                                trgsent['words'][swi][1]['corefin'].append((ssi,swi))
+                if 'coref' in text:
+                    for coref_outer in text['coref']:
+                        for coref in coref_outer:
+                            ssi = coref[0][1]
+                            tsi = coref[1][1]
+                            srcsent = text['sentences'][ssi]
+                            trgsent = text['sentences'][tsi]
+                            for swi in range(coref[0][3],coref[0][4]):
+                                for twi in range(coref[1][3],coref[1][4]):
+                                    srcsent['words'][swi][1]['corefout'].append((tsi,twi))
+                                    trgsent['words'][twi][1]['corefin'].append((ssi,swi))
         return documents
 
