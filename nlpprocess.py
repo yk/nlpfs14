@@ -96,7 +96,7 @@ def createTreeNode(node,i=[0],index=dict()):
     i[0] = ii+1
     tn = TreeNode(node[0],[createTreeNode(n,i=i,index=index) for n in node[1:]],ii)
     for child in tn.children:
-        if isString(child):
+        if not isString(child):
             child.parent = tn
     index[ii] = tn
     return tn

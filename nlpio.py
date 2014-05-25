@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-import re,glob,random,os,logging,threading
+import re,glob,random,os,threading,logging
 from corenlp import StanfordCoreNLP
 from corenlp import batch_parse
 
