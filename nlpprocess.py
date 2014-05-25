@@ -5,6 +5,9 @@ from sklearn.base import TransformerMixin
 from pyparsing import nestedExpr
 import itertools as itt
 
+def isString(s):
+    return isinstance(s,str) or isinstance(s,unicode)
+
 class SimpleTextCleaner(BaseEstimator,TransformerMixin):
     #TODO: make better
     def __init__(self):
@@ -81,19 +84,19 @@ class TreeNode(object):
         return None
 
     def isLeaf(self):
-        return type(self.children[0]) == type('bla')
+        return isString(self.children[0])
 
     def getValue(self):
         return self.children[0]
 
 def createTreeNode(node,i=[0],index=dict()):
-    if type(node) == type('bla'):
+    if isString(node):
         return node
     ii = i[0]
     i[0] = ii+1
     tn = TreeNode(node[0],[createTreeNode(n,i=i,index=index) for n in node[1:]],ii)
     for child in tn.children:
-        if type(child) != type('bla'):
+        if isString(child):
             child.parent = tn
     index[ii] = tn
     return tn
@@ -111,7 +114,7 @@ class StanfordTransformer(BaseEstimator,TransformerMixin):
         for doc in documents:
             for text in itt.chain([doc.ext['stanford']['article']],doc.ext['stanford']['models']):
                 for sent in text['sentences']:
-                    if type(sent['parsetree']) == type('bla'):
+                    if isString(sent['parsetree']):
                         sent['parsetree'],sent['parsetreeindex'] = parseTreeString(sent['parsetree'])
                     indx = 0
                     for i,word in enumerate(sent['words']):
