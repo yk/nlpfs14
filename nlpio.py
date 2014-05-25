@@ -12,9 +12,13 @@ class Document(object):
             raise Exception('No text in document %s' % name)
         self.modelPath = modelPath
         self.peerPath = peerPath
-        self.modelFileNames = glob.glob(self.modelPath + '*' + self.name)
+
+        dirNumber = re.findall('d(\d+)', path)[0]
+
+        self.modelFileNames = glob.glob(self.modelPath + '*' + dirNumber + '*' + self.name)
+
         self.models = [parseSimpleFile(modelFileName) for modelFileName in self.modelFileNames]
-        self.peerFileNames = glob.glob(self.peerPath + '*' + self.name)
+        self.peerFileNames = glob.glob(self.peerPath + '*' + dirNumber + '*' + self.name)
         self.peers = [parseSimpleFile(peerFileName) for peerFileName in self.peerFileNames]
 
         #removing models and peers with empty content
