@@ -16,7 +16,7 @@ if __name__ == '__main__':
     pipeline = Pipeline([
         ('clean',SimpleTextCleaner()),
         ('sentence',SentenceSplitter()),
-        ('stanford',StanfordParser()),
+        ('stanford',StanfordBatchParser()),
         ('stanfordtransform',StanfordTransformer()),
         ('manualfeatures',ManualFeatureExtractor()),
         ('manual',ManualEstimator()),

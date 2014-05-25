@@ -12,9 +12,9 @@ class Feature(object):
     def setOffset(self,offset):
         self.offset = offset
 
-    def setFeature(self,features,tag,value=1):
+    def setFeature(self,features,tag,value=1,additive=False):
         if tag in self.tags:
-            features[self.offset + self.tags[tag]] = value
+            features[self.offset + self.tags[tag]] = value if not additive else value + features[self.offset + self.tags[tag]]
             
 class SimpleFeature(Feature):
     def __init__(self):
@@ -44,4 +44,3 @@ class WordTagFeature(Feature):
 
     def extractAndSet(self,features,word):
         self.setFeature(features,self.extract(word))
-        
