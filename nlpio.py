@@ -13,12 +13,12 @@ class Document(object):
         self.modelPath = modelPath
         self.peerPath = peerPath
 
-        dirNumber = re.findall('d(\d+)', path)[0]
+        self.dirName = re.findall('d(\d+)', path)[0]
 
-        self.modelFileNames = glob.glob(self.modelPath + '*' + dirNumber + '*' + self.name)
+        self.modelFileNames = glob.glob(self.modelPath + '*' + self.dirName + '*' + self.name)
 
         self.models = [parseSimpleFile(modelFileName) for modelFileName in self.modelFileNames]
-        self.peerFileNames = glob.glob(self.peerPath + '*' + dirNumber + '*' + self.name)
+        self.peerFileNames = glob.glob(self.peerPath + '*' + self.dirName + '*' + self.name)
         self.peers = [parseSimpleFile(peerFileName) for peerFileName in self.peerFileNames]
 
         #removing models and peers with empty content
@@ -87,7 +87,7 @@ def produceRougeInput(documents,predictionFileNames):
 def savePredictions(documents,predictions,predictionsPath):
     predictionFileNames = []
     for doc,pred in zip(documents,predictions):
-        pfn = '%s/PRED.A.%s' % (predictionsPath,doc.name)
+        pfn = '%s/PRED.A.%s_%s' % (predictionsPath,doc.dirName,doc.name)
         with open(pfn,'w') as f:
             f.write(' %s ' % pred)
         predictionFileNames.append(pfn)
