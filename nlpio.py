@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
-import re,glob,random,os
+import re,glob,random,os,threading,logging
 from corenlp import StanfordCoreNLP
+from corenlp import batch_parse
 
 class Document(object):
     def __init__(self,name,path,modelPath,peerPath):
@@ -129,9 +130,67 @@ def evaluateRouge(documents,predictions,rougeBinary='rouge/ROUGE-1.5.5.pl',rouge
     return results
 
 stanford = None
+stanfordLock = threading.Lock()
+stanfordDefaultAnnotators =['tokenize', 'ssplit', 'pos', 'lemma', 'ner', 'parse','dcoref']
 
-def stanfordParse(text, corenlpDir='stanford-corenlp-full-2013-11-12/'):
+def stanfordParse(text, corenlpDir='corenlp/stanford-corenlp-full-2013-11-12/',annotators =stanfordDefaultAnnotators):
     global stanford
     if stanford is None:
-        stanford = StanfordCoreNLP(corenlpDir)
+        stanfordLock.acquire()
+        try:
+            if stanford is None:
+                logging.info('loading stanford corenlp')
+                with open('corenlp/nlp.properties','w') as f:
+                    f.write("annotators = " + ", ".join(annotators))
+                stanford = StanfordCoreNLP(corenlpDir,properties='nlp.properties')
+                logging.info('done loading stanford corenlp')
+        finally:
+            stanfordLock.release()
     return stanford.raw_parse(text)
+
+def stanfordBatchParse(documents, corenlpDir='corenlp/stanford-corenlp-full-2013-11-12/',annotators =stanfordDefaultAnnotators):
+    stanfordLock.acquire()
+    try:
+        logging.info('parsing docs with corenlp')
+        defaultProperties = None
+        with open('corenlp/default.properties') as f:
+            defaultProperties = f.read()
+        with open('corenlp/default.properties','w') as f:
+            f.write("annotators = " + ", ".join(annotators))
+        rint = random.randint(1,1000000000)
+        tmpParseFolderName = 'tmp_parse_%d' % rint
+        os.mkdir(tmpParseFolderName)
+        docDict = dict()
+        modelToDocDict = dict()
+        for di,doc in enumerate(documents):
+            tmpDocFileName = '%s_%s' %(doc.dirName,doc.name)
+            with open('%s/%s' % (tmpParseFolderName,tmpDocFileName),'w') as f:
+                f.write(doc.text)
+            docDict[tmpDocFileName] = di
+            for mi,model in enumerate(doc.models):
+                tmpModelFileName = '%s_model_%d' % (tmpDocFileName,mi)
+                modelToDocDict[tmpModelFileName] = (di,mi)
+                with open('%s/%s' % (tmpParseFolderName,tmpModelFileName),'w') as f:
+                    f.write(model)
+
+        biter = batch_parse(tmpParseFolderName,corenlpDir)
+
+        results = [[None,[None for model in doc.models]] for doc in documents]
+        for bit in iter(biter):
+            fn = bit['file_name']
+            if '_model_' in fn:
+                results[modelToDocDict[fn][0]][1][modelToDocDict[fn][1]] = bit
+            else:
+                results[docDict[fn]][0] = bit
+        
+        for fn in glob.glob('%s/*' % tmpParseFolderName):
+            os.remove(fn)
+        os.rmdir(tmpParseFolderName)
+
+        if defaultProperties is not None:
+            with open('corenlp/default.properties','w') as f:
+                f.write(defaultProperties)
+
+        return results
+    finally:
+        stanfordLock.release()
