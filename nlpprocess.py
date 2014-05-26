@@ -1,4 +1,4 @@
-import re
+import re,os,pickle
 from nlpio import *
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
@@ -51,6 +51,34 @@ class StanfordParser(BaseEstimator, TransformerMixin):
                 article = stanfordParse(doc.text,annotators=self.annotators)
                 models = [stanfordParse(model,annotators=self.annotators) for model in doc.models]
                 doc.ext['stanford'] = dict(article=article,models=models)
+        return documents
+
+class CachingStanfordParser(StanfordParser):
+
+    def __init__(self,**kwargs):
+        super(CachingStanfordParser,self).__init__(**kwargs)
+
+    def transform(self, documents):
+        logging.info('analyzing documents with corenlp')
+        cachedir = 'cache'
+        try:
+            os.mkdir(cachedir)
+        except:
+            pass
+        for i, doc in enumerate(documents):
+            if not 'stanford' in doc.ext:
+                cacheName = '%s/%s_%s' % (cachedir,doc.dirName,doc.name)
+                if os.access(cacheName,os.F_OK):
+                    logging.info('loading %s from cache' % doc.name)
+                    with open(cacheName) as f:
+                        doc.ext['stanford'] = pickle.load(f)
+                else:
+                    logging.info('evaluating %s with corenlp' % doc.name)
+                    article = stanfordParse(doc.text,annotators=self.annotators)
+                    models = [stanfordParse(model,annotators=self.annotators) for model in doc.models]
+                    doc.ext['stanford'] = dict(article=article,models=models)
+                    with open(cacheName,'w') as f:
+                        pickle.dump(doc.ext['stanford'],f)
         return documents
 
 class StanfordBatchParser(StanfordParser):
@@ -115,7 +143,12 @@ class StanfordTransformer(BaseEstimator,TransformerMixin):
             for text in itt.chain([doc.ext['stanford']['article']],doc.ext['stanford']['models']):
                 for sent in text['sentences']:
                     if isString(sent['parsetree']):
-                        sent['parsetree'],sent['parsetreeindex'] = parseTreeString(sent['parsetree'])
+                        try:
+                            sent['parsetree'],sent['parsetreeindex'] = parseTreeString(sent['parsetree'])
+                        except Exception:
+                            print "couldn't parse %s" % doc.name
+                            print sent['parsetree']
+                            raise
                     indx = 0
                     for i,word in enumerate(sent['words']):
                         wn = sent['parsetree'].findNode(word[0],fromIndex=indx)

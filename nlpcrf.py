@@ -10,30 +10,42 @@ from sklearn.base import TransformerMixin
 from pystruct.models import GraphCRF
 from pystruct.learners import OneSlackSSVM
 
+def setFeatureFromDict(features,dct,tag):
+    try:
+        features[dct[tag]] = 1
+    except:
+        pass
+
 class CrfFeatureExtractor(BaseEstimator,TransformerMixin):
-    """
-    TODO: need the following
-    - features on POS tags
-    - edges of CRF
-    - positional features?
-    - ?
-    """
     def __init__(self):
         pass
 
     def fit(self,documents,y=None):
-        logging.info('extracting crf features')
-        self.wordFeatures = [WordTagFeature('PartOfSpeech'),WordTagFeature('NamedEntityTag')]
+        logging.info('extracting features')
+        self.posTags = []
+        self.nerTags = []
+        self.depTags = []
+        self.parseTags = []
         for doc in documents:
             for text in itt.chain([doc.ext['stanford']['article']],doc.ext['stanford']['models']):
                 for sent in text['sentences']:
                     for word in sent['words']:
-                        for feature in self.wordFeatures:
-                            feature.fit(word)
+                        self.posTags.append(word[1]['PartOfSpeech'])
+                        self.posTags.append(word[1]['NamedEntityTag'])
+                        if 'dependency' in word[1]:
+                            self.depTags.append(word[1]['dependency'][1])
+                        if 'parsetreenode' in word[1]:
+                            ptn = word[1]['parsetreenode']
+                            while ptn is not None:
+                                self.parseTags.append(ptn.name)
+                                if not hasattr(ptn,'parent') or ptn.parent is None:
+                                    break
+                                ptn = ptn.parent
+        self.posTags,self.nerTags,self.depTags,self.parseTags = map(lambda x : dict(zip(list(set(x)),itt.count())),[ self.posTags,self.nerTags,self.depTags,self.parseTags ])
         return self
 
     def transform(self,documents):
-        logging.info('applying crf features')
+        logging.info('applying features')
         for doc in documents:
             if not 'crf' in doc.ext:
                 nodes = []
@@ -45,23 +57,47 @@ class CrfFeatureExtractor(BaseEstimator,TransformerMixin):
                         for word in sent['words']:
                             labelWords.append(word[0])
                 labelWords = set(labelWords)
-                numFeatures = setOffsets(self.wordFeatures)
-                for sent in doc.ext['stanford']['article']['sentences']:
-                    for word in sent['words']:
+                for rw in ['to','.',',','',';','?','!']:
+                    if rw in labelWords:
+                        labelWords.remove(rw)
+                print labelWords
+                totalIndex = -1
+                depRoot = None
+                for sentIndex,sent in enumerate(doc.ext['stanford']['article']['sentences']):
+                    for wordIndex,word in enumerate(sent['words']):
+                        totalIndex += 1
+                        #if word[0] in ['.',',','to']:
+                            #continue
                         labels.append(1 if word[0] in labelWords else 0)
-                        features = np.zeros(numFeatures)
-                        for feature in self.wordFeatures:
-                            feature.extractAndSet(features,word)
+                        posFeatures,nerFeatures,depFeatures,parseFeatures = map(lambda x : np.zeros(len(x),dtype=float),[self.posTags,self.nerTags,self.depTags,self.parseTags])
+                        setFeatureFromDict(posFeatures,self.posTags,word[1]['PartOfSpeech'])
+                        setFeatureFromDict(nerFeatures,self.nerTags,word[1]['NamedEntityTag'])
+                        if 'dependency' in word[1]:
+                            setFeatureFromDict(depFeatures,self.depTags,word[1]['dependency'][1])
+                        if 'parsetreenode' in word[1]:
+                            ptn = word[1]['parsetreenode']
+                            while ptn is not None:
+                                setFeatureFromDict(parseFeatures,self.parseTags,ptn.name)
+                                if not hasattr(ptn,'parent') or ptn.parent is None:
+                                    break
+                                ptn = ptn.parent
+                        features = np.concatenate((posFeatures,nerFeatures,depFeatures,parseFeatures))
                         nodes.append(features)
-                for i in range(len(nodes)-1):
-                    edges.append([i,i+1])
+                        if 'dependency' in word[1]:
+                            edges.append([totalIndex,totalIndex-wordIndex+word[1]['dependency'][0]])
+                        else:
+                            if depRoot is not None:
+                                edges.append([depRoot,totalIndex])
+                            depRoot = totalIndex
+                #for i in range(len(nodes)-1):
+                    #edges.append([i,i+1])
                 doc.ext['crf'] = dict(nodes=np.array(nodes),edges=np.array(edges),labels=np.array(labels))
         return documents
 
 class CrfEstimator(BaseEstimator):
     '''Wrapper around the crf stuff'''
-    def __init__(self,C):
-        self.C = C
+    def __init__(self):
+        pass
 
     def _buildCrf(self,documents):
         X = [(doc.ext['crf']['nodes'],doc.ext['crf']['edges']) for doc in documents]
@@ -72,7 +108,7 @@ class CrfEstimator(BaseEstimator):
         if not hasattr(self,'crf'):
             nfeatures = documents[0].ext['crf']['nodes'].shape[1]
             model = GraphCRF(n_states=2,n_features=nfeatures,directed=True)
-            self.crf = OneSlackSSVM(model=model,C=self.C)
+            self.crf = OneSlackSSVM(model=model,C=1.0)
 
     def fit(self, documents, y=None): 
         logging.info("fitting crf")

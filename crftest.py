@@ -10,15 +10,16 @@ from sklearn.cross_validation import train_test_split
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    documents = loadDocumentsFromFile('testset.txt')
+    documents = loadDocumentsFromFile('testset_large.txt')
 
 
     pipeline = Pipeline([
         ('clean',SimpleTextCleaner()),
         ('sentence',SentenceSplitter()),
-        ('stanford',StanfordParser()),
+        ('stanford',CachingStanfordParser()),
+        ('stanfordtransform',StanfordTransformer()),
         ('crffeatures',CrfFeatureExtractor()),
-        ('crf',CrfEstimator(C=1.0)),
+        ('crf',CrfEstimator()),
         ])
     
     trainDocs,testDocs = train_test_split(documents,test_size=0.2)
